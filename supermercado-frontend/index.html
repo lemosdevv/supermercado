@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supermercado</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1>Bem-vindo ao Supermercado</h1>
+        <hr>
+        <div class="nav d-flex justify-content-start">
+            <button class="btn btn-primary me-2" onclick="showRegisterSection()">Cadastrar Produto</button>
+            <button class="btn btn-primary me-2" onclick="showSearchSection()">Pesquisar Produto</button>
+            <button class="btn btn-primary me-2" onclick="showEditSection()">Editar Produto</button>
+            <button class="btn btn-primary me-2" onclick="showCheckoutSection()">Registrar Produto</button>
+            <button class="btn btn-success me-2 open-cash-register-btn" onclick="openCashRegister()">Abrir Caixa</button>
+            <button class="btn btn-info" onclick="showReportSection()">Relatórios</button>
+    </div>
+    <hr>
+
+        <div id="cashRegisterSection">
+            <h2>Caixa</h2>
+            <div id="cashRegisterStatus">Status: Fechado</div>
+        </div>
+
+        <div id="registerSection" class="row" style="display: none;">
+            <div class="col-md-6">
+                <h2>Cadastrar Produto</h2>
+                <form onsubmit="registerProduct(event)">
+                    <input type="text" id="ean" placeholder="Digite o EAN do Produto" required class="form-control mb-2">
+                    <input type="text" id="name" placeholder="Digite o Nome do Produto" required class="form-control mb-2">
+                    <select id="category" required class="form-control mb-2">
+                        <option value="">Selecione a Categoria</option>
+                        <option value="bebidas">Bebidas</option>
+                        <option value="flv">FLV</option>
+                        <option value="mercearia">Mercearia</option>
+                        <option value="padaria">Padaria</option>
+                        <option value="limpeza">Limpeza</option>
+                        <option value="açougue">Açougue</option>
+                    </select>
+                    <input type="text" id="value" placeholder="Digite o Valor do Produto" required class="form-control mb-2">
+                    <button type="submit" class="btn btn-primary">Cadastrar</button>
+                </form>
+                <div id="successMessage" class="alert alert-success" style="display: none;">Produto cadastrado com sucesso!</div>
+            </div>
+        </div>
+
+        <div id="searchSection" style="display: none;">
+            <h2>Pesquisar Produto</h2>
+            <form onsubmit="searchProduct(event)">
+                <input type="text" id="searchTerm" placeholder="Digite o EAN ou Nome" required class="form-control mb-2">
+                <button type="submit" class="btn btn-primary">Pesquisar</button>
+            </form>
+            <div id="searchResult"></div>
+        </div>
+
+        <div id="editSection" style="display: none;">
+            <h2>Editar Produto</h2>
+            <form onsubmit="editProduct(event)">
+                <input type="text" id="editEan" placeholder="Digite o EAN do Produto" required class="form-control mb-2">
+                <input type="text" id="editName" placeholder="Novo Nome do Produto" class="form-control mb-2">
+                <input type="text" id="editValue" placeholder="Novo Valor do Produto" class="form-control mb-2">
+                <button type="submit" class="btn btn-primary">Atualizar</button>
+            </form>
+            <div id="editResult"></div>
+        </div>
+
+        <div id="checkoutSection" class="row" style="display: none;">
+            <div class="col-md-6">
+                <h2>Registrar Produto</h2>
+                <form onsubmit="checkoutProduct(event)">
+                    <input type="text" id="eanCheckout" placeholder="Digite o EAN do Produto" required class="form-control mb-2">
+                    <button type="submit" class="btn btn-primary">Adicionar ao Carrinho</button>
+                </form>
+                <div id="checkoutResult"></div>
+            </div>
+
+            <div class="col-md-6">
+                <button class="btn btn-primary move-button" onclick="showPaymentModal()">Finalizar Compra</button>
+                <div id="cartItems">
+                    <div class="cart-header">
+                        <h3>Carrinho</h3>
+                        <span id="totalAmount" class="total">R$ 0.00</span>
+                    </div>
+                    <ul id="cartList"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="paymentModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="hidePaymentModal()">&times;</span>
+                <h3>Formas de Pagamento</h3>
+                <div id="errorMessage" style="display: none; color: red;"></div> <!-- Div para mensagens de erro -->
+                <label>
+                    <input type="radio" name="paymentMethod" value="credito"> Crédito
+                </label>
+                <label>
+                    <input type="radio" name="paymentMethod" value="debito"> Débito
+                </label>
+                <label>
+                    <input type="radio" name="paymentMethod" value="pix"> Pix
+                </label>
+                <label>
+                    <input type="radio" name="paymentMethod" value="dinheiro" onclick="toggleDinheiroSection()"> Dinheiro
+                </label>
+                <div id="dinheiroSection" style="display: none;">
+                    <input type="text" id="valorRecebido" placeholder="Valor Recebido" class="form-control mb-2">
+                </div>
+                <button class="btn btn-primary" onclick="finalizePurchase()">Finalizar Compra</button>
+            </div>
+        </div>
+
+        <div id="overlay" class="overlay" onclick="hidePaymentModal()"></div>
+
+        <div id="closeRegisterModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="hideCloseRegisterModal()">&times;</span>
+                <h3>Fechar Caixa</h3>
+                <form id="closeRegisterForm" onsubmit="handleCloseRegister(event)">
+                    <label for="initialAmount">Valor Inicial do Fundo do Caixa:</label>
+                    <input type="number" id="initialAmount" required class="form-control mb-2">
+                    <label for="currentAmount">Valor Atual no Caixa:</label>
+                    <input type="number" id="currentAmount" required class="form-control mb-2">
+                    <button type="submit" class="btn btn-primary">Fechar Caixa</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="reportSection" style="display: none;">
+            <h2>Relatório do Caixa</h2>
+            <form onsubmit="buscarRelatoriosPorData(event)">
+                <input type="date" id="reportDate" required class="form-control mb-2">
+                <button type="submit" class="btn btn-primary">Buscar Relatório</button>
+            </form>
+            <div id="reportContent"></div>
+        </div>
+    </div>
+    <footer class="fixed-footer">
+        <div class="container">
+            <p>&copy; Mateus Lemos do Nascimento. Todos os direitos reservados.</p>
+            <p>
+                <a href="contato">Contato</a> | 
+                <a href="sobre">Sobre Nós</a> | 
+                <a href="politica-privacidade">Política de Privacidade</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
