@@ -3,7 +3,7 @@ let cashRegisterOpen = false;
 let totalAmount = 0;
 const products = [];
 const transactions = [];
-let initialAmount = 0; // Variável para armazenar o valor inicial do fundo do caixa
+let initialAmount = 0; 
 
 async function openCashRegister() {
     try {

@@ -16,7 +16,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(@SuppressWarnings("null") @NonNull CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000", "http://127.0.0.1:3000") // Permite requisições de localhost e 127.0.0.1
+                        .allowedOrigins("http://localhost:3000", "http://127.0.0.1:3000", "https://sistema-supermercado.netlify.app") // Permite requisições de localhost e 127.0.0.1
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
