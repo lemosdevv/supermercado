@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Supermercado
 
 Bem-vindo ao projeto Supermercado! Este projeto é uma aplicação web para gerenciar produtos e transações de um supermercado.
@@ -25,13 +26,15 @@ Bem-vindo ao projeto Supermercado! Este projeto é uma aplicação web para gere
 
 1. Clone o repositório:
     ```sh
-    git clone https://github.com/USERNAME/supermercado.git
+    git clone https://github.com/lemosdevv/sistema-supermercado.git
     ```
 2. Navegue até o diretório do frontend:
     ```sh
     cd supermercado/supermercado-frontend
     ```
-3. Abra o arquivo `index.html` no seu navegador.
+3. Abra o terminal
+
+4. live-server --port=3000
 
 ### Backend
 
@@ -51,3 +54,6 @@ Se você quiser contribuir com este projeto, sinta-se à vontade para abrir uma 
 ## Licença
 
 Este projeto está licenciado sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+=======
+# sistema-supermercado
+>>>>>>> 8e325b1754a6c6477b902e657aa1264537c27689
