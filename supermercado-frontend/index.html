@@ -21,10 +21,10 @@
             <button class="btn btn-primary me-2" onclick="showSearchSection()">Pesquisar Produto</button>
             <button class="btn btn-primary me-2" onclick="showEditSection()">Editar Produto</button>
             <button class="btn btn-primary me-2" onclick="showCheckoutSection()">Registrar Produto</button>
-            <button class="btn btn-success me-2 open-cash-register-btn" onclick="openCashRegister()">Abrir Caixa</button>
+            <button class="btn btn-success me-2 open-cash-register-btn" onclick="showOpenRegisterModal()">Abrir Caixa</button>
             <button class="btn btn-info" onclick="showReportSection()">Relatórios</button>
-    </div>
-    <hr>
+        </div>
+        <hr>
 
         <div id="cashRegisterSection">
             <h2>Caixa</h2>
@@ -115,19 +115,29 @@
                 <div id="dinheiroSection" style="display: none;">
                     <input type="text" id="valorRecebido" placeholder="Valor Recebido" class="form-control mb-2">
                 </div>
-                <button class="btn btn-primary" onclick="finalizePurchase()">Finalizar Compra</button>
+                <button class="btn btn-primary" onclick="finalizePurchase(event)">Finalizar Compra</button>
             </div>
         </div>
 
         <div id="overlay" class="overlay" onclick="hidePaymentModal()"></div>
+
+        <div id="openRegisterModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="hideOpenRegisterModal()">&times;</span>
+                <h3>Abrir Caixa</h3>
+                <form id="openRegisterForm" onsubmit="handleOpenRegister(event)">
+                    <label for="initialAmountOpen">Qual o valor do fundo?</label>
+                    <input type="number" id="initialAmountOpen" required class="form-control mb-2">
+                    <button type="submit" class="btn btn-primary">Abrir Caixa</button>
+                </form>
+            </div>
+        </div>
 
         <div id="closeRegisterModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="hideCloseRegisterModal()">&times;</span>
                 <h3>Fechar Caixa</h3>
                 <form id="closeRegisterForm" onsubmit="handleCloseRegister(event)">
-                    <label for="initialAmount">Valor Inicial do Fundo do Caixa:</label>
-                    <input type="number" id="initialAmount" required class="form-control mb-2">
                     <label for="currentAmount">Valor Atual no Caixa:</label>
                     <input type="number" id="currentAmount" required class="form-control mb-2">
                     <button type="submit" class="btn btn-primary">Fechar Caixa</button>

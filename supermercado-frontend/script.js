@@ -3,6 +3,7 @@ let cashRegisterOpen = false;
 let totalAmount = 0;
 const products = [];
 const transactions = [];
+let initialAmount = 0; // Variável para armazenar o valor inicial do fundo do caixa
 
 async function openCashRegister() {
     try {
@@ -32,17 +33,16 @@ function hideCloseRegisterModal() {
 
 async function handleCloseRegister(event) {
     event.preventDefault();
-    const initialAmount = parseFloat(document.getElementById('initialAmount').value);
     const currentAmount = parseFloat(document.getElementById('currentAmount').value);
 
-    if (isNaN(initialAmount) || isNaN(currentAmount)) {
-        alert('Por favor, insira valores válidos.');
+    if (isNaN(currentAmount)) {
+        alert('Por favor, insira um valor válido.');
         return;
     }
 
     const totalCashTransactions = transactions
         .filter(transaction => transaction.paymentMethod === 'dinheiro')
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
+        .reduce((sum, transaction) => sum + transaction.totalAmount, 0);
 
     const expectedAmount = initialAmount + totalCashTransactions;
     const caixaBateu = expectedAmount === currentAmount;
@@ -78,7 +78,7 @@ function generateReport() {
     };
 
     transactions.forEach(transaction => {
-        report[transaction.paymentMethod] += transaction.amount;
+        report[transaction.paymentMethod] += transaction.totalAmount;
     });
 
     return report;
@@ -101,7 +101,7 @@ async function getCashRegisterStatus() {
         const response = await fetch(`${backendUrl}/api/caixa-register/status`);
         if (response.ok) {
             const status = await response.json();
-            cashRegisterOpen = (status === 'OPEN');
+            cashRegisterOpen = status.open;
             document.getElementById('cashRegisterStatus').innerText = `Status: ${cashRegisterOpen ? 'Aberto' : 'Fechado'}`;
             updateCashRegisterButton();
         } else {
@@ -116,9 +116,13 @@ function updateCashRegisterButton() {
     const button = document.querySelector('.open-cash-register-btn');
     if (cashRegisterOpen) {
         button.innerText = 'Fechar Caixa';
+        button.classList.remove('btn-success');
+        button.classList.add('btn-danger');
         button.onclick = showCloseRegisterModal;
     } else {
         button.innerText = 'Abrir Caixa';
+        button.classList.remove('btn-danger');
+        button.classList.add('btn-success');
         button.onclick = openCashRegister;
     }
 }
@@ -139,240 +143,11 @@ async function registerProduct(event) {
     }
 
     const product = { ean, name, category, value };
-
-    try {
-        const response = await fetch(`${backendUrl}/produto`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(product)
-        });
-
-        if (response.ok) {
-            products.push(product);
-            displayProducts();
-            clearRegistrationForm();
-            showSuccessMessage();
-        } else {
-            alert('Erro ao cadastrar o produto');
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-    }
-}
-
-function displayProducts() {
-    const productList = document.getElementById('productList');
-    productList.innerHTML = '';
-    products.forEach(product => {
-        productList.innerHTML += `
-            <li>
-                ${product.ean} - ${product.name} - R$ ${product.value.toFixed(2)} 
-                <button onclick="editProduct('${product.ean}')">Editar</button>
-            </li>`;
-    });
-}
-
-function clearRegistrationForm() {
-    document.getElementById('ean').value = '';
-    document.getElementById('name').value = '';
-    document.getElementById('category').value = '';
-    document.getElementById('value').value = '';
-}
-
-function showSuccessMessage() {
-    const successMessage = document.getElementById('successMessage');
-    successMessage.style.display = 'block';
+    products.push(product);
+    document.getElementById('successMessage').style.display = 'block';
     setTimeout(() => {
-        successMessage.style.display = 'none';
-    }, 3000); // Esconde a mensagem após 3 segundos
-}
-
-async function searchProduct(event) {
-    event.preventDefault();
-    const searchTerm = document.getElementById('searchTerm').value;
-    const resultDiv = document.getElementById('searchResult');
-    const product = products.find(p => p.ean === searchTerm || p.name === searchTerm);
-    if (product) {
-        resultDiv.innerHTML = `<h3>Produto Encontrado:</h3>
-        <p>Nome: ${product.name}</p>
-        <p>Categoria: ${product.category}</p>
-        <p>Valor: R$ ${product.value.toFixed(2)}</p>`;
-    } else {
-        resultDiv.innerHTML = `<h3>Produto não cadastrado</h3>`;
-    }
-}
-
-function editProduct(ean) {
-    const product = products.find(p => p.ean === ean);
-    if (product) {
-        document.getElementById('editEan').value = product.ean;
-        document.getElementById('editName').value = product.name;
-        document.getElementById('editValue').value = product.value;
-
-        // Exibir a seção de edição
-        showEditSection();
-    }
-}
-
-function showEditSection() {
-    document.getElementById('registerSection').style.display = 'none';
-    document.getElementById('searchSection').style.display = 'none';
-    document.getElementById('editSection').style.display = 'block';
-    document.getElementById('checkoutSection').style.display = 'none';
-    document.getElementById('reportSection').style.display = 'none'; // Esconde a seção de relatórios
-}
-
-async function editProduct(event) {
-    event.preventDefault();
-    const ean = document.getElementById('editEan').value;
-    const name = document.getElementById('editName').value;
-    const value = parseFloat(document.getElementById('editValue').value);
-
-    const productIndex = products.findIndex(p => p.ean === ean);
-    if (productIndex !== -1) {
-        const updatedProduct = {
-            ean,
-            name: name || products[productIndex].name,
-            category: products[productIndex].category,
-            value: value || products[productIndex].value
-        };
-
-        try {
-            const response = await fetch(`${backendUrl}/produto/${ean}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updatedProduct)
-            });
-
-            if (response.ok) {
-                products[productIndex] = updatedProduct;
-                displayProducts();
-                clearEditForm();
-                document.getElementById('editResult').innerText = "Produto atualizado com sucesso!";
-            } else {
-                document.getElementById('editResult').innerText = "Erro ao atualizar o produto.";
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-        }
-    } else {
-        document.getElementById('editResult').innerText = "Produto não encontrado.";
-    }
-}
-
-function clearEditForm() {
-    document.getElementById('editEan').value = '';
-    document.getElementById('editName').value = '';
-    document.getElementById('editValue').value = '';
-}
-
-async function checkoutProduct(event) {
-    event.preventDefault();
-    const ean = document.getElementById('eanCheckout').value;
-    const resultDiv = document.getElementById('checkoutResult');
-    const product = products.find(p => p.ean === ean);
-    if (product) {
-        resultDiv.innerHTML = `<h3>Produto Encontrado:</h3>
-        <p>Nome: ${product.name}</p>
-        <p>Categoria: ${product.category}</p>
-        <p>Valor: R$ ${product.value.toFixed(2)}</p>`;
-        addToCart(product);
-    } else {
-        resultDiv.innerHTML = `<h3>Produto não encontrado</h3>`;
-    }
-}
-
-function addToCart(product) {
-    const cartList = document.getElementById('cartList');
-    const cartItem = document.createElement('li');
-    cartItem.innerHTML = `${product.ean} - ${product.name} - R$ ${product.value.toFixed(2)} 
-                          <button class="remove-button" onclick="removeFromCart(this)">Remover</button>`;
-    cartList.appendChild(cartItem);
-    totalAmount += product.value;
-    updateTotal(totalAmount);
-}
-
-function removeFromCart(button) {
-    const cartItem = button.parentElement; // Obtém o item do carrinho
-    const itemValue = parseFloat(cartItem.innerText.split(' - R$ ')[1]); // Obtém o valor do item
-    totalAmount -= itemValue; // Subtrai o valor do total
-    updateTotal(totalAmount); // Atualiza o total
-    cartItem.remove(); // Remove o item do carrinho
-}
-
-function finalizePurchase() {
-    const errorMessage = document.getElementById('errorMessage'); // Referência ao elemento de mensagem de erro
-    errorMessage.style.display = 'none';
-
-    if (totalAmount === 0) {
-        errorMessage.innerText = "Você não possui nenhum item no carrinho.";
-        errorMessage.style.display = 'block';
-        return;
-    }
-
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-    if (paymentMethod === "dinheiro") {
-        const valorRecebido = parseFloat(document.getElementById('valorRecebido').value);
-        if (isNaN(valorRecebido) || valorRecebido < totalAmount) {
-            errorMessage.innerText = "Valor recebido insuficiente.";
-            errorMessage.style.display = 'block';
-            return;
-        }
-        const troco = valorRecebido - totalAmount;
-        alert(`Compra finalizada com sucesso!\nTroco: R$ ${troco.toFixed(2)}`);
-    } else {
-        alert("Compra finalizada com sucesso!");
-    }
-
-    transactions.push({ paymentMethod, amount: totalAmount });
-    resetCart(); // Chama a função para resetar o carrinho
-    hidePaymentModal();
-}
-
-function resetCart() {
-    totalAmount = 0; // Zera o total
-    updateTotal(totalAmount); // Atualiza o total na interface
-    document.getElementById('cartList').innerHTML = ''; // Limpa a lista de produtos no carrinho
-}
-
-function showPaymentModal() {
-    const errorMessage = document.getElementById('errorMessage'); // Referência ao elemento de mensagem de erro
-    errorMessage.style.display = 'none'; // Esconde a mensagem de erro
-
-    if (totalAmount === 0) {
-        errorMessage.innerText = "Você não possui nenhum item no carrinho."; // Define a mensagem de erro
-        errorMessage.style.display = 'block'; // Exibe a mensagem de erro
-        return;
-    }
-
-    const modal = document.getElementById('paymentModal');
-    const overlay = document.getElementById('overlay');
-    modal.style.display = 'block';
-    overlay.style.display = 'block';
-}
-
-function hidePaymentModal() {
-    const modal = document.getElementById('paymentModal');
-    const overlay = document.getElementById('overlay');
-    modal.style.display = 'none';
-    overlay.style.display = 'none';
-}
-
-function showCheckoutSection() {
-    if (!cashRegisterOpen) {
-        alert('O caixa está fechado. Não é possível registrar produtos.');
-        return;
-    }
-    document.getElementById('checkoutSection').style.display = 'block';
-    document.getElementById('cartItems').style.display = 'block'; 
-    document.getElementById('registerSection').style.display = 'none';
-    document.getElementById('searchSection').style.display = 'none';
-    document.getElementById('editSection').style.display = 'none';
-    document.getElementById('reportSection').style.display = 'none'; 
+        document.getElementById('successMessage').style.display = 'none';
+    }, 3000);
 }
 
 function showRegisterSection() {
@@ -389,6 +164,28 @@ function showSearchSection() {
     document.getElementById('cartItems').style.display = 'none'; 
     document.getElementById('registerSection').style.display = 'none';
     document.getElementById('searchSection').style.display = 'block';
+    document.getElementById('editSection').style.display = 'none';
+    document.getElementById('reportSection').style.display = 'none';
+}
+
+function showEditSection() {
+    document.getElementById('checkoutSection').style.display = 'none';
+    document.getElementById('cartItems').style.display = 'none'; 
+    document.getElementById('registerSection').style.display = 'none';
+    document.getElementById('searchSection').style.display = 'none';
+    document.getElementById('editSection').style.display = 'block';
+    document.getElementById('reportSection').style.display = 'none';
+}
+
+function showCheckoutSection() {
+    if (!cashRegisterOpen) {
+        alert('O caixa está fechado. Abra o caixa para registrar produtos.');
+        return;
+    }
+    document.getElementById('checkoutSection').style.display = 'block';
+    document.getElementById('cartItems').style.display = 'block'; 
+    document.getElementById('registerSection').style.display = 'none';
+    document.getElementById('searchSection').style.display = 'none';
     document.getElementById('editSection').style.display = 'none';
     document.getElementById('reportSection').style.display = 'none';
 }
@@ -466,3 +263,231 @@ function updateTotal(amount) {
 }
 
 updateTotal(0.00);
+
+// Função para pesquisar produto
+async function searchProduct(event) {
+    event.preventDefault();
+    const searchTerm = document.getElementById('searchTerm').value.toLowerCase();
+
+    const foundProducts = products.filter(product => 
+        product.ean.toLowerCase().includes(searchTerm) || 
+        product.name.toLowerCase().includes(searchTerm)
+    );
+
+    const searchResult = document.getElementById('searchResult');
+    searchResult.innerHTML = '';
+
+    if (foundProducts.length > 0) {
+        foundProducts.forEach(product => {
+            searchResult.innerHTML += `
+                <div class="product">
+                    <p>EAN: ${product.ean}</p>
+                    <p>Nome: ${product.name}</p>
+                    <p>Categoria: ${product.category}</p>
+                    <p>Valor: R$ ${product.value.toFixed(2).replace('.', ',')}</p>
+                </div>
+                <hr>
+            `;
+        });
+    } else {
+        searchResult.innerHTML = '<p>Nenhum produto encontrado.</p>';
+    }
+}
+
+// Função para editar produto
+async function editProduct(event) {
+    event.preventDefault();
+    const editEan = document.getElementById('editEan').value;
+    const editName = document.getElementById('editName').value;
+    const editValue = parseFloat(document.getElementById('editValue').value);
+
+    if (!editEan || isNaN(editValue)) {
+        alert('Por favor, preencha todos os campos corretamente.');
+        return;
+    }
+
+    const productIndex = products.findIndex(product => product.ean === editEan);
+
+    if (productIndex === -1) {
+        alert('Produto não encontrado.');
+        return;
+    }
+
+    if (editName) {
+        products[productIndex].name = editName;
+    }
+
+    if (!isNaN(editValue)) {
+        products[productIndex].value = editValue;
+    }
+
+    document.getElementById('editResult').innerHTML = `
+        <div class="alert alert-success">Produto atualizado com sucesso!</div>
+    `;
+
+    setTimeout(() => {
+        document.getElementById('editResult').innerHTML = '';
+    }, 3000);
+}
+
+// Função para registrar produto e adicionar ao carrinho
+async function checkoutProduct(event) {
+    event.preventDefault();
+    const eanCheckout = document.getElementById('eanCheckout').value;
+
+    const product = products.find(product => product.ean === eanCheckout);
+
+    if (!product) {
+        alert('Produto não encontrado.');
+        return;
+    }
+
+    // Adiciona o produto ao carrinho
+    const cartList = document.getElementById('cartList');
+    const listItem = document.createElement('li');
+    listItem.style.display = 'flex';
+    listItem.style.justifyContent = 'space-between';
+    listItem.innerHTML = `
+        <span> ${product.ean}</span>
+        <span> ${product.name}</span>
+        <span>Valor: R$ ${product.value.toFixed(2).replace('.', ',')}</span>
+        <button class="btn btn-danger btn-sm" onclick="removeFromCart(this, ${product.value})">Remover</button>
+    `;
+    cartList.appendChild(listItem);
+
+    // Atualiza o total
+    totalAmount += product.value;
+    updateTotal(totalAmount);
+
+    // Limpa o campo de entrada
+    document.getElementById('eanCheckout').value = '';
+}
+
+// Função para remover produto do carrinho
+function removeFromCart(button, value) {
+    const listItem = button.parentElement;
+    listItem.remove();
+
+    // Atualiza o total
+    totalAmount -= value;
+    updateTotal(totalAmount);
+}
+
+// Função para finalizar a compra
+async function finalizePurchase(event) {
+    event.preventDefault();
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+    if (!paymentMethod) {
+        alert('Por favor, selecione um método de pagamento.');
+        return;
+    }
+
+    const cartItems = document.querySelectorAll('#cartList li');
+    if (cartItems.length === 0) {
+        alert('O carrinho está vazio.');
+        return;
+    }
+
+    const transaction = {
+        items: [],
+        paymentMethod: paymentMethod,
+        totalAmount: totalAmount
+    };
+
+    cartItems.forEach(item => {
+        const ean = item.querySelector('span:nth-child(1)').textContent.split(': ')[1];
+        const name = item.querySelector('span:nth-child(2)').textContent.split(': ')[1];
+        const value = parseFloat(item.querySelector('span:nth-child(3)').textContent.split(': ')[1].replace('R$ ', '').replace(',', '.'));
+
+        transaction.items.push({ ean, name, value });
+    });
+
+    transactions.push(transaction);
+
+    // Limpa o carrinho
+    document.getElementById('cartList').innerHTML = '';
+    totalAmount = 0;
+    updateTotal(totalAmount);
+
+    // Calcula o troco se a forma de pagamento for dinheiro
+    if (paymentMethod === 'dinheiro') {
+        const valorRecebido = parseFloat(document.getElementById('valorRecebido').value.replace(',', '.'));
+        if (isNaN(valorRecebido) || valorRecebido < transaction.totalAmount) {
+            alert('Valor recebido inválido ou insuficiente.');
+            return;
+        }
+        const troco = valorRecebido - transaction.totalAmount;
+        alert(`Pagamento efetuado com sucesso! Troco: R$ ${troco.toFixed(2).replace('.', ',')}`);
+    } else {
+        alert('Pagamento efetuado com sucesso!');
+    }
+
+    // Fecha o modal de pagamento
+    hidePaymentModal();
+}
+
+function showPaymentModal() {
+    document.getElementById('paymentModal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+function hidePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+function toggleDinheiroSection() {
+    const dinheiroSection = document.getElementById('dinheiroSection');
+    dinheiroSection.style.display = (dinheiroSection.style.display === 'none' || dinheiroSection.style.display === '') ? 'block' : 'none';
+}
+
+// Função para abrir o modal de abertura do caixa
+function showOpenRegisterModal() {
+    document.getElementById('openRegisterModal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+// Função para fechar o modal de abertura do caixa
+function hideOpenRegisterModal() {
+    document.getElementById('openRegisterModal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+// Função para lidar com a abertura do caixa
+async function handleOpenRegister(event) {
+    event.preventDefault();
+    initialAmount = parseFloat(document.getElementById('initialAmountOpen').value);
+
+    if (isNaN(initialAmount) || initialAmount < 0) {
+        alert('Por favor, insira um valor válido.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/api/caixa-register/open`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ initialAmount })
+        });
+
+        if (response.ok) {
+            document.getElementById('cashRegisterStatus').innerText = 'Status: Aberto';
+            cashRegisterOpen = true;
+            updateCashRegisterButton();
+            alert('Caixa aberto com sucesso!');
+            hideOpenRegisterModal();
+        } else {
+            alert('Erro ao abrir o caixa');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+    }
+}
+
+// Atualize a função openCashRegister para abrir o modal
+function openCashRegister() {
+    showOpenRegisterModal();
+}

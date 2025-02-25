@@ -25,7 +25,7 @@ Bem-vindo ao projeto Supermercado! Este projeto é uma aplicação web para gere
 
 1. Clone o repositório:
     ```sh
-    git clone https://github.com/mateuslemos85/supermercado.git
+    git clone https://github.com/lemosdevv/sistema-supermercado.git
     ```
 2. Navegue até o diretório do frontend:
     ```sh
@@ -42,17 +42,13 @@ Bem-vindo ao projeto Supermercado! Este projeto é uma aplicação web para gere
 
 1. Navegue até o diretório do backend:
     ```sh
-    cd supermercado/supermercado-backend
+    cd supermercado/supermercado
     ```
 2. Execute o servidor Spring Boot:
     ```sh
-    ./mvnw spring-boot:run
+    mvnw spring-boot:run
     ```
 
 ## Contribuição
 
 Se você quiser contribuir com este projeto, sinta-se à vontade para abrir uma issue ou enviar um pull request.
-
-## Licença
-
-Este projeto está licenciado sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
